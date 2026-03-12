@@ -165,7 +165,7 @@ export default function Setting() {
                             <section className="bg-white p-6 rounded-xl border shadow-sm">
 
                                 <div className="flex items-center gap-2 mb-6 border-b pb-4">
-                                    <span className="material-symbols-outlined text-blue-500">
+                                    <span className="material-symbols-outlined text-primary">
                                         person
                                     </span>
 
@@ -188,7 +188,7 @@ export default function Setting() {
                                             name="name"
                                             value={profile.name}
                                             onChange={handleChange}
-                                            className="h-12 rounded-lg border px-3 focus:ring-2 focus:ring-blue-400 outline-none"
+                                            className="h-12 rounded-lg border px-3 focus:ring-2 focus:ring-primary outline-none"
                                         />
                                     </div>
 
@@ -204,7 +204,7 @@ export default function Setting() {
                                             name="username"
                                             value={profile.username}
                                             onChange={handleChange}
-                                            className="h-12 rounded-lg border px-3 focus:ring-2 focus:ring-blue-400 outline-none"
+                                            className="h-12 rounded-lg border px-3 focus:ring-2 focus:ring-primary outline-none"
                                         />
                                     </div>
 
@@ -235,7 +235,7 @@ export default function Setting() {
                                             name="dob"
                                             value={profile.dob}
                                             onChange={handleChange}
-                                            className="h-12 rounded-lg border px-3 focus:ring-2 focus:ring-blue-400 outline-none"
+                                            className="h-12 rounded-lg border px-3 focus:ring-2 focus:ring-primary outline-none"
                                         />
                                     </div>
 
@@ -245,7 +245,7 @@ export default function Setting() {
 
                                     <button
                                         onClick={handleSave}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold text-sm"
+                                        className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-lg font-semibold text-sm"
                                     >
                                         Lưu thay đổi
                                     </button>
@@ -259,7 +259,7 @@ export default function Setting() {
                             <section className="bg-white p-6 rounded-xl border shadow-sm">
 
                                 <div className="flex items-center gap-2 mb-4">
-                                    <span className="material-symbols-outlined text-blue-500">
+                                    <span className="material-symbols-outlined text-primary">
                                         link
                                     </span>
 
@@ -282,7 +282,7 @@ export default function Setting() {
 
                                     <button
                                         onClick={handleCopy}
-                                        className="flex items-center gap-2 bg-blue-100 text-blue-600 px-6 py-3 rounded-lg font-semibold text-sm hover:bg-blue-200"
+                                        className="flex items-center gap-2 bg-primary/10 text-primary px-6 py-3 rounded-lg font-semibold text-sm hover:bg-primary/20"
                                     >
                                         <span className="material-symbols-outlined text-[20px]">
                                             content_copy
@@ -300,7 +300,7 @@ export default function Setting() {
                             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
 
                                 <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-blue-500">
+                                    <span className="material-symbols-outlined text-primary">
                                         lock
                                     </span>
                                     <h3 className="font-bold text-slate-800">
@@ -446,7 +446,7 @@ export default function Setting() {
 
                                     <button
                                         onClick={changePassword}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold text-sm"
+                                        className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-lg font-semibold text-sm"
                                     >
                                         Cập nhật mật khẩu
                                     </button>

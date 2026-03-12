@@ -86,6 +86,19 @@ export default function Register() {
 
                 <div className="max-w-xl w-full bg-white rounded-xl shadow-xl p-7 border border-slate-200">
 
+                    {/* LOGO */}
+                    <div className="flex items-center gap-3 mb-6">
+
+                        <span className="material-symbols-outlined text-primary text-4xl">
+                            school
+                        </span>
+
+                        <h2 className="text-xl font-bold tracking-tight">
+                            EduPlatform
+                        </h2>
+
+                    </div>
+
                     <div className="mb-6">
 
                         <h2 className="text-2xl font-bold mb-2">

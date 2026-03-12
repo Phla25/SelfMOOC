@@ -340,7 +340,7 @@ export default function Setting() {
                         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
 
                             <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-blue-500">
+                                <span className="material-symbols-outlined text-primary">
                                     lock
                                 </span>
                                 <h3 className="font-bold text-slate-800">
@@ -366,7 +366,7 @@ export default function Setting() {
                                             onChange={e =>
                                                 setPassword({ ...password, oldPassword: e.target.value })
                                             }
-                                            className="w-full mt-1 rounded-lg border px-4 py-2.5 bg-slate-50"
+                                            className="w-full mt-1 rounded-lg border px-4 py-3 text-base bg-slate-50"
                                         />
 
                                         <span
@@ -402,7 +402,7 @@ export default function Setting() {
                                             onChange={e =>
                                                 setPassword({ ...password, newPassword: e.target.value })
                                             }
-                                            className="w-full mt-1 rounded-lg border px-4 py-2.5 bg-slate-50"
+                                            className="w-full mt-1 rounded-lg border px-4 py-3 text-base bg-slate-50"
                                         />
 
                                         <span
@@ -441,7 +441,7 @@ export default function Setting() {
                                                     confirmPassword: e.target.value
                                                 })
                                             }
-                                            className="w-full mt-1 rounded-lg border px-4 py-2.5 bg-slate-50"
+                                            className="w-full mt-1 rounded-lg border px-4 py-3 text-base bg-slate-50"
                                         />
 
                                         <span
@@ -486,7 +486,7 @@ export default function Setting() {
 
                                 <button
                                     onClick={changePassword}
-                                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold text-sm"
+                                    className="mt-3 bg-primary text-white font-bold py-3 rounded-lg text-base"
                                 >
                                     Cập nhật mật khẩu
                                 </button>

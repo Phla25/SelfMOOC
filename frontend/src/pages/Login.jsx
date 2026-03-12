@@ -72,11 +72,13 @@ export default function Login() {
 
                     <div className="flex items-center gap-3 mb-12">
 
-                        <div className="p-3 bg-primary rounded-lg text-white">
-                            <span className="material-symbols-outlined text-2xl">school</span>
-                        </div>
+                        <span className="material-symbols-outlined text-primary text-4xl">
+                            school
+                        </span>
 
-                        <h2 className="text-3xl font-bold">EduPlatform</h2>
+                        <h2 className="text-2xl font-bold tracking-tight">
+                            EduPlatform
+                        </h2>
 
                     </div>
 

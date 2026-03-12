@@ -215,7 +215,7 @@ export default function Home() {
             {/* FOOTER */}
 
             <footer className="p-6 text-center text-slate-400 text-xs">
-                © 2024 EduPlatform. Tất cả các quyền được bảo lưu.
+                © 2026 EduPlatform. Bản quyền thuộc về EduPlatform. Hệ thống giáo dục toàn diện cho trẻ em.
             </footer>
 
         </div>

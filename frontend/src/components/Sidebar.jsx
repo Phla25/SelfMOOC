@@ -64,17 +64,14 @@ export default function Sidebar() {
             <div className="flex flex-col gap-8">
 
                 {/* LOGO */}
-                <div className="flex items-center gap-3 px-2">
-                    <div className="size-10 bg-primary rounded-xl flex items-center justify-center text-white">
-                        <span className="material-symbols-outlined text-2xl">
-                            school
-                        </span>
-                    </div>
+                <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary text-4xl">
+                        school
+                    </span>
 
-                    <div>
-                        <h1 className="text-lg font-bold">EduPlatform</h1>
-                        <p className="text-xs text-slate-500">Hệ thống giáo dục</p>
-                    </div>
+                    <h2 className="text-xl font-bold tracking-tight">
+                        EduPlatform
+                    </h2>
                 </div>
 
                 {/* MENU */}
