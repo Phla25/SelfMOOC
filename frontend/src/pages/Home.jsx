@@ -1,6 +1,15 @@
 import { Link } from "react-router-dom"
 
 export default function Home() {
+
+    const scrollToSection = (id) => {
+        const section = document.getElementById(id)
+        if (section) {
+            section.scrollIntoView({ behavior: "smooth" })
+        }
+    }
+
+
     return (
         <div className="min-h-screen flex flex-col bg-background-light">
 
@@ -19,17 +28,17 @@ export default function Home() {
 
                 <nav className="hidden md:flex gap-6 text-sm font-medium">
 
-                    <Link to="/home">
+                    <button onClick={() => scrollToSection("home")} className="hover:text-primary">
                         Trang chủ
-                    </Link>
+                    </button>
 
-                    <Link to="/courses">
+                    <button onClick={() => scrollToSection("courses")} className="hover:text-primary">
                         Khóa học
-                    </Link>
+                    </button>
 
-                    <Link to="/contact">
+                    <button onClick={() => scrollToSection("contacts")} className="hover:text-primary">
                         Liên hệ
-                    </Link>
+                    </button>
 
                 </nav>
 
@@ -56,9 +65,9 @@ export default function Home() {
 
             <main className="flex-1">
 
-                {/* HERO */}
+                {/*HOME*/}
 
-                <section className="px-6 md:px-20 lg:px-40 py-16">
+                <section id="home" className="px-6 md:px-20 lg:px-40 py-16">
 
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
 
@@ -89,16 +98,12 @@ export default function Home() {
                                     Bắt đầu học
                                 </Link>
 
-                                <button className="px-6 py-3 rounded-xl border font-bold">
-                                    Xem video
-                                </button>
-
                             </div>
 
                         </div>
 
 
-                        {/* HERO IMAGE */}
+                        {/* HOME IMAGE */}
 
                         <div className="rounded-3xl overflow-hidden shadow-xl">
 
@@ -115,9 +120,9 @@ export default function Home() {
                 </section>
 
 
-                {/* BENEFITS */}
+                {/* COURSES */}
 
-                <section className="px-6 md:px-20 lg:px-40 py-20 bg-white">
+                <section id="courses" className="px-6 md:px-20 lg:px-40 py-20 bg-white">
 
                     <div className="text-center mb-12">
 
@@ -189,6 +194,20 @@ export default function Home() {
                     </div>
 
                 </section>
+
+                {/* CONTACT */}
+                <section id="contacts" className="px-6 md:px-20 lg:px-40 py-20">
+                    <div className="text-center ">
+                        <h2 className="text-3xl font-bold">
+                            Liên hệ với chúng tôi
+                        </h2>
+
+                        <p className="text-slate-500 mt-3">
+                            Đội ngũ hỗ trợ luôn sẵn sàng giải đáp mọi thắc mắc của bạn
+                        </p>
+                    </div>
+                </section>
+
 
             </main>
 
