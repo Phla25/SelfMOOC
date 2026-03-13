@@ -28,21 +28,23 @@ export default function Sidebar() {
         TEACHER: [
             { icon: "dashboard", label: "Tổng quan", path: "/teacher/dashboard" },
             { icon: "groups", label: "Lớp học", path: "/teacher/classes" },
+            { icon: "library_books", label: "Thư viện học liệu", path: "/teacher/materials" },
             { icon: "assignment", label: "Bài tập", path: "/teacher/assignments" },
             { icon: "calendar_today", label: "Lịch dạy", path: "/teacher/schedule" },
             { icon: "bar_chart", label: "Báo cáo", path: "/teacher/reports" },
             { icon: "mail", label: "Tin nhắn", path: "/messages" },
-            { icon: "settings", label: "Cài đặt", path: "/teacher/settings" }
+            { icon: "settings", label: "Cài đặt", path: "/teacher/settings" },
         ],
 
         STUDENT: [
             { icon: "dashboard", label: "Tổng quan", path: "/student/dashboard" },
             { icon: "groups", label: "Lớp học", path: "/student/classes" },
+            { icon: "library_books", label: "Thư viện học liệu", path: "/student/materials" },
             { icon: "assignment", label: "Bài tập", path: "/student/assignments" },
             { icon: "bar_chart", label: "Kết quả", path: "/student/results" },
             { icon: "calendar_today", label: "Lịch học", path: "/student/schedule" },
             { icon: "mail", label: "Tin nhắn", path: "/messages" },
-            { icon: "settings", label: "Cài đặt", path: "/student/settings" }
+            { icon: "settings", label: "Cài đặt", path: "/student/settings" },
         ],
 
         PARENT: [

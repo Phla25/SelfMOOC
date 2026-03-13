@@ -33,17 +33,27 @@ exports.register = async (req, res) => {
 
 // Login user
 exports.login = async (req, res) => {
-    const { email, username, password } = req.body;
+    const { email, username, password, role } = req.body;
+
     try {
+
         if (!password) {
             return res.status(400).json({ error: "Mật khẩu là bắt buộc" });
         }
 
-        //find by email or username
-        const result = await pool.query(
-            "SELECT * FROM users WHERE email = $1 OR username = $2",
-            [email || null, username || null]
-        );
+        let result;
+
+        if (role === "STUDENT") {
+            result = await pool.query(
+                "SELECT * FROM users WHERE username = $1 AND role = $2",
+                [username, role]
+            );
+        } else {
+            result = await pool.query(
+                "SELECT * FROM users WHERE email = $1 AND role = $2",
+                [email, role]
+            );
+        }
 
         if (result.rows.length === 0) {
             return res.status(400).json({ error: "Người dùng không tồn tại" });
@@ -52,14 +62,16 @@ exports.login = async (req, res) => {
         const user = result.rows[0];
 
         const validPassword = await bcrypt.compare(password, user.password_hash);
+
         if (!validPassword) {
             return res.status(400).json({ error: "Mật khẩu không đúng" });
         }
 
         const token = generateToken(user);
+
         res.json({
             message: "Đăng nhập thành công",
-            token: token,
+            token,
             user: {
                 id: user.id,
                 email: user.email,
@@ -67,6 +79,7 @@ exports.login = async (req, res) => {
                 role: user.role
             }
         });
+
     } catch (err) {
         console.error("Đăng nhập thất bại:", err);
         res.status(500).json({ error: "Lỗi máy chủ" });

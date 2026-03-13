@@ -32,7 +32,10 @@ export default function Dashboard() {
                                 Tạo bài thi
                             </button>
 
-                            <button className="flex items-center gap-2 bg-white border px-4 py-2.5 rounded-xl font-bold text-sm">
+                            <button
+                                onClick={() => navigate("/teacher/create-material")}
+                                className="flex items-center gap-2 bg-white border px-4 py-2.5 rounded-xl font-bold text-sm"
+                            >
                                 <span className="material-symbols-outlined">upload_file</span>
                                 Tải học liệu
                             </button>

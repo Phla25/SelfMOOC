@@ -39,18 +39,24 @@ export default function Login() {
             const data = await res.json()
 
             if (res.ok) {
+
+                const userRole = data.user.role
+
                 localStorage.setItem("token", data.token)
-                localStorage.setItem("role", data.user.role)
+                localStorage.setItem("role", userRole)
+
                 if (data.user.username) {
                     localStorage.setItem("username", data.user.username)
                 }
                 if (data.user.email) {
                     localStorage.setItem("email", data.user.email)
                 }
+
                 alert("Đăng nhập thành công")
-                if (role === "STUDENT") navigate("/student/dashboard")
-                if (role === "TEACHER") navigate("/teacher/dashboard")
-                if (role === "PARENT") navigate("/parent/dashboard")
+
+                if (userRole === "STUDENT") navigate("/student/dashboard")
+                if (userRole === "TEACHER") navigate("/teacher/dashboard")
+                if (userRole === "PARENT") navigate("/parent/dashboard")
             } else {
                 alert(data.message || "Đăng nhập thất bại")
             }
