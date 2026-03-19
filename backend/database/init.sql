@@ -52,3 +52,27 @@ CREATE TABLE parent_student (
     student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
     PRIMARY KEY(parent_id, student_id)
 );
+
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+
+    sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+
+    type VARCHAR(50), -- ví dụ: 'ABSENCE', 'SCORE', 'GENERAL'
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE notification_receivers (
+    id SERIAL PRIMARY KEY,
+    notification_id INTEGER REFERENCES notifications(id) ON DELETE CASCADE,
+
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
