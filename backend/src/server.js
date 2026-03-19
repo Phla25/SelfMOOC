@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const parentRoutes = require("./routes/parentRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/parents", parentRoutes);
 app.use("/api/teachers", teacherRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Health check route
 app.get("/", (req, res) => {
