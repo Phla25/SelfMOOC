@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
 import Home from "./pages/Home"
@@ -19,26 +19,27 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/home" replace />} />
 
-      // Public routes
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/home" element={<Home />} />
 
-      // Dashboard and settings routes for each role
-        // Teacher routes
+        {/* Dashboard and settings routes for each role */}
+        {/* Teacher routes */}
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
         <Route path="/teacher/settings" element={<TeacherSetting />} />
         <Route path="/teacher/create-student" element={<CreateStudent />} />
         <Route path="/teacher/create-material" element={<CreateMaterial />} />
         <Route path="/teacher/materials" element={<TeacherMaterialsPage />} />
 
-        // Student routes
+        {/* Student routes */}
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/settings" element={<StudentSetting />} />
         <Route path="/student/materials" element={<StudentMaterialsPage />} />
 
-        // Parent routes
+        {/* Parent routes */}
         <Route path="/parent/dashboard" element={<ParentDashboard />} />
         <Route path="/parent/settings" element={<ParentSetting />} />
 
