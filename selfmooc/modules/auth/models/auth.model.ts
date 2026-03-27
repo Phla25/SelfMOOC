@@ -5,18 +5,29 @@ export const RoleEnum = z.enum(['teacher', 'student', 'parent']);
 export type UserRole = z.infer<typeof RoleEnum>;
 
 // Tạo cái "Khuôn" (Schema) kiểm tra dữ liệu đầu vào
-export const loginSchema = z.object({
-  email: z
-    .string({ message: 'Vui lòng nhập email' })
-    .email('Định dạng email không hợp lệ (ví dụ: name@domain.com)'),
-  password_raw: z
-    .string({ message: 'Vui lòng nhập mật khẩu' })
-    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-  role: RoleEnum,
-});
+export const loginSchema = z.discriminatedUnion('role', [
+  // Trường hợp 1: Học sinh
+  z.object({
+    role: z.literal('student'),
+    student_code: z.string({ message: 'Vui lòng nhập mã học sinh' }).min(1, 'Mã học sinh không được để trống'),
+    password_raw: z.string({ message: 'Vui lòng nhập mật khẩu' }),
+  }),
+  
+  // Trường hợp 2: Giáo viên
+  z.object({
+    role: z.literal('teacher'),
+    email: z.string({ message: 'Vui lòng nhập email' }).email('Định dạng email không hợp lệ'),
+    password_raw: z.string({ message: 'Vui lòng nhập mật khẩu' }).min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  }),
+  
+  // Trường hợp 3: Phụ huynh (Code y hệt giáo viên nhưng role khác)
+  z.object({
+    role: z.literal('parent'),
+    email: z.string({ message: 'Vui lòng nhập email' }).email('Định dạng email không hợp lệ'),
+    password_raw: z.string({ message: 'Vui lòng nhập mật khẩu' }).min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  }),
+]);
 
-// Zod tự động biến Schema thành TypeScript Interface cho bạn! 
-// (Giống hệt cái LoginPayload lúc trước nhưng xịn hơn)
 export type LoginPayload = z.infer<typeof loginSchema>;
 
 // Thông tin trả về sau khi đăng nhập (giữ nguyên)

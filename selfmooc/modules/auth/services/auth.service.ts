@@ -38,7 +38,7 @@ export async function authenticateUser(payload: LoginPayload): Promise<AuthUser 
     // 4. Trả về thông tin AuthUser (Tuyệt đối không trả về password_hash)
     return {
       id: user.id,
-      email: user.email,
+      email: user.email, // Học sinh không có trường này nên sẽ bị null
       name: user.name,
       role: payload.role,
       avatar_url: user.avatar_url || null,
