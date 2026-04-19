@@ -10,6 +10,7 @@ const MENUS = {
     { name: 'Bảng Của Tớ', icon: '🏠', path: '/' },
     { name: 'Lớp học', icon: '📚', path: '/classes' },
     { name: 'Lịch Học', icon: '📅', path: '/schedule' },
+    { name: 'Thông Báo', icon: '🔔', path: '/notifications' },
     { name: 'Nhật Ký', icon: '📝', path: '/diary' },
     { name: 'Hồ Sơ', icon: '🪪', path: '/profile' },
   ],
@@ -27,6 +28,7 @@ const MENUS = {
   parent: [
     { name: 'Tổng Quan', icon: '👁️', path: '/' },
     { name: 'Gia Đình', icon: '👨‍👩‍👧‍👦', path: '/family' },
+    { name: 'Thông Báo', icon: '🔔', path: '/notifications' },
     { name: 'Nhắn Tin', icon: '💬', path: '/chats' },
     { name: 'Hồ Sơ', icon: '🪪', path: '/profile' },
   ],

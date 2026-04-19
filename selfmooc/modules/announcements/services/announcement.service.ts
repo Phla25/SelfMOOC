@@ -3,13 +3,21 @@ import {
   createAnnouncementMongo,
   getEnrolledStudentsDB,
   createNotificationsMongo,
-  getAnnouncementsByClassMongo
+  getAnnouncementsByClassMongo,
+  getAnnouncementsByClassesMongo
 } from '../models/announcement.model';
 
+type AnnouncementInput = {
+  title: string;
+  body: string;
+  attachments?: Record<string, unknown>[];
+  is_pinned?: boolean;
+};
+
 export async function createClassAnnouncementService(
-  teacherId: number, 
-  classId: number, 
-  data: { title: string; body: string; attachments?: any[]; is_pinned?: boolean }
+  teacherId: number,
+  classId: number,
+  data: AnnouncementInput
 ) {
   // 1. Kiểm tra giáo viên có quản lý lớp này không
   const isAuthorized = await checkTeacherClassDB(teacherId, classId);
@@ -39,7 +47,7 @@ export async function createClassAnnouncementService(
     body: data.body.substring(0, 100) + '...', // Trích dẫn 1 đoạn ngắn
     payload: { announcement_id: announcementId, class_id: classId },
     channels: {
-      in_app: { sent: true, read_at: null }
+      in_app: { sent: true }
     },
     is_read: false,
     created_at: new Date(),
@@ -53,4 +61,8 @@ export async function createClassAnnouncementService(
 
 export async function getClassAnnouncementsService(classId: number) {
   return await getAnnouncementsByClassMongo(classId);
+}
+
+export async function getAllUserAnnouncementsService(classIds: number[]) {
+  return await getAnnouncementsByClassesMongo(classIds);
 }

@@ -78,3 +78,13 @@ export async function getAnnouncementsByClassMongo(classId: number) {
     .sort({ created_at: -1 }) // Mới nhất lên đầu
     .toArray();
 }
+
+// 6. Lấy thông báo từ nhiều lớp (Dùng cho Dashboard)
+export async function getAnnouncementsByClassesMongo(classIds: number[]) {
+  const db = await getMongoDb();
+  return await db.collection('class_announcement')
+    .find({ pg_class_id: { $in: classIds } })
+    .sort({ created_at: -1 })
+    .limit(10)
+    .toArray();
+}

@@ -1,25 +1,79 @@
 'use server';
 import { cookies } from 'next/headers';
 import { getMongoDb } from '@/lib/db';
+import { pgPool } from '@/lib/db';
 import { ObjectId } from 'mongodb'; 
 
-export async function getMyNotificationsAction() {
+type ChildProfile = {
+  student_id: number;
+  student_name: string;
+  student_avatar: string | null;
+};
+
+type NotificationQuery = Record<string, unknown>;
+
+export async function getMyNotificationsAction(limit = 10) {
   const token = (await cookies()).get('session')?.value;
   if (!token) return { success: false, data: [] };
   
-  // Giải mã token để lấy user id
   const user = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf-8'));
 
   const db = await getMongoDb();
+  let query: NotificationQuery = { recipient_id: user.id };
+  const childMap = new Map<number, ChildProfile>();
+
+  if (user.role === 'parent') {
+    const client = await pgPool.connect();
+    try {
+      const childrenRes = await client.query(
+        `
+          SELECT
+            s.student_id,
+            s.name AS student_name,
+            s.avatar_url AS student_avatar
+          FROM parent_student ps
+          JOIN student s ON ps.student_id = s.student_id
+          WHERE ps.parent_id = $1
+          ORDER BY s.name ASC
+        `,
+        [user.id]
+      );
+
+      const children = childrenRes.rows as ChildProfile[];
+      children.forEach((child) => {
+        childMap.set(Number(child.student_id), child);
+      });
+
+      const childIds = children.map((child) => child.student_id);
+      if (childIds.length === 0) {
+        return { success: true, data: [] };
+      }
+
+      query = {
+        recipient_type: 'student',
+        recipient_id: { $in: childIds },
+      };
+    } finally {
+      client.release();
+    }
+  }
+
   const notifs = await db.collection('notification')
-    .find({ recipient_id: user.id })
+    .find(query)
     .sort({ created_at: -1 })
-    .limit(10)
+    .limit(limit)
     .toArray();
     
   return { 
     success: true, 
-    data: notifs.map(n => ({...n, _id: n._id.toString()})) 
+    data: notifs.map((n) => {
+      const child = childMap.get(Number(n.recipient_id));
+      return {
+        ...n,
+        _id: n._id.toString(),
+        child: child ? { ...child } : null,
+      };
+    }) 
   };
 }
 

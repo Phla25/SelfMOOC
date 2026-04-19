@@ -48,9 +48,9 @@ export async function createAnnouncementAction(classId: number, formData: any) {
   // 3. Gọi Service thực thi nghiệp vụ
   try {
     await createClassAnnouncementService(user.id, classId, parsed.data);
-    
+
     // Refresh lại trang lớp học để hiện thông báo mới
-    revalidatePath(`/classes/${classId}`); 
+    revalidatePath(`/classes/${classId}`);
     return { success: true, message: '🎉 Đã gửi thông báo đến toàn bộ lớp thành công!' };
   } catch (error: any) {
     console.error('Lỗi khi tạo thông báo:', error);
@@ -68,7 +68,7 @@ export async function getAnnouncementsAction(classId: number) {
 
   try {
     const rawAnnouncements = await getClassAnnouncementsService(classId);
-    
+
     // Ép _id và Date thành String trước khi gửi xuống UI
     const safeData = rawAnnouncements.map((ann: any) => ({
       ...ann,
@@ -125,10 +125,10 @@ export async function deleteAnnouncementAction(announcementId: string) {
   try {
     const db = await getMongoDb();
     await db.collection('class_announcement').deleteOne({ _id: new ObjectId(announcementId) });
-    
+
     // (Tùy chọn) Bạn có thể xóa luôn các notification rác liên quan đến thông báo này ở đây
     await db.collection('notification').deleteMany({ "payload.announcement_id": new ObjectId(announcementId) });
-    
+
     return { success: true, message: '🗑️ Đã xóa thông báo thành công!' };
   } catch (error) {
     return { success: false, message: 'Lỗi khi xóa thông báo' };
@@ -141,17 +141,63 @@ export async function updateAnnouncementAction(announcementId: string, data: any
     const db = await getMongoDb();
     await db.collection('class_announcement').updateOne(
       { _id: new ObjectId(announcementId) },
-      { 
-        $set: { 
-          title: data.title, 
-          body: data.body, 
+      {
+        $set: {
+          title: data.title,
+          body: data.body,
           is_pinned: data.is_pinned,
           updated_at: new Date()
-        } 
+        }
       }
     );
     return { success: true, message: '✅ Đã cập nhật thông báo!' };
   } catch (error) {
     return { success: false, message: 'Lỗi khi cập nhật' };
+  }
+}
+
+// HÀM LẤY THÔNG BÁO CHO DASHBOARD (Dùng chung cho cả SV và PH)
+export async function getDashboardAnnouncementsAction() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('session')?.value;
+  if (!token) return { success: false, data: [] };
+
+  const user = getUserFromToken(token);
+  if (!user) return { success: false, data: [] };
+
+  const client = await pgPool.connect();
+  try {
+    let classIds: number[] = [];
+    if (user.role === 'student') {
+      const res = await client.query('SELECT class_id FROM enrollment WHERE student_id = $1', [user.id]);
+      classIds = res.rows.map(r => r.class_id);
+    } else if (user.role === 'parent') {
+      const res = await client.query(`
+        SELECT DISTINCT e.class_id 
+        FROM enrollment e 
+        JOIN parent_student ps ON e.student_id = ps.student_id 
+        WHERE ps.parent_id = $1
+      `, [user.id]);
+      classIds = res.rows.map(r => r.class_id);
+    }
+
+    if (classIds.length === 0) return { success: true, data: [] };
+
+    // Sử dụng service chung để lấy dữ liệu (đã được tối ưu ở tầng Model)
+    const { getAllUserAnnouncementsService } = await import('../services/announcement.service');
+    const announcements = await getAllUserAnnouncementsService(classIds);
+
+    const safeData = announcements.map((ann: any) => ({
+      ...ann,
+      _id: ann._id.toString(),
+      created_at: ann.created_at ? new Date(ann.created_at).toISOString() : null,
+    }));
+
+    return { success: true, data: safeData };
+  } catch (error) {
+    console.error(error);
+    return { success: false, data: [] };
+  } finally {
+    client.release();
   }
 }

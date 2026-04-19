@@ -1,17 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // 🎯 1. Import useRouter để chuyển trang
+import { useState, useEffect, useRef } from 'react';
 import { getMyNotificationsAction, markAsReadAction } from '@/modules/notifications/notification.action'; 
 
-export default function Header({ user }: { user?: any }) {
-  const router = useRouter();
+type HeaderUser = {
+  name?: string;
+  avatar_url?: string;
+  role?: 'teacher' | 'student' | 'parent';
+};
+
+type HeaderNotification = {
+  _id: string;
+  title: string;
+  body: string;
+  is_read: boolean;
+  child?: {
+    student_name: string;
+  } | null;
+};
+
+export default function Header({ user }: { user?: HeaderUser }) {
   const [showNotifs, setShowNotifs] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  
-  // State cho thanh tìm kiếm
-  const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
+  const notifPanelRef = useRef<HTMLDivElement | null>(null);
   
   // State tạm thời cho nút chuyển chế độ (Sẽ xử lý logic ở bước sau)
   const [isDarkMode, setIsDarkMode] = useState(false); 
@@ -25,6 +37,17 @@ export default function Header({ user }: { user?: any }) {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      if (notifPanelRef.current && !notifPanelRef.current.contains(event.target as Node)) {
+        setShowNotifs(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
   
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -33,21 +56,12 @@ export default function Header({ user }: { user?: any }) {
     return 'Chào buổi tối';
   };
 
-  const handleNotifClick = async (notif: any) => {
+  const handleNotifClick = async (notif: HeaderNotification) => {
     if (!notif.is_read) {
       const res = await markAsReadAction(notif._id); 
       if (res.success) {
         setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, is_read: true } : n));
       }
-    }
-  };
-
-  // 🎯 2. Hàm xử lý khi người dùng ấn Enter ở thanh tìm kiếm
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      // Chuyển hướng sang trang kết quả tìm kiếm
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery(''); // Xóa thanh tìm kiếm sau khi enter
     }
   };
 
@@ -79,9 +93,9 @@ export default function Header({ user }: { user?: any }) {
           </button>
 
           {/* 🎯 5. NÚT CHUÔNG ĐÃ CHUYỂN SANG MÀU TRẮNG */}
-          <div className="relative">
+          <div className="relative" ref={notifPanelRef}>
             <button 
-              onClick={() => setShowNotifs(!showNotifs)}
+              onClick={() => setShowNotifs((value) => !value)}
               className="relative p-2.5 bg-white text-amber-500 rounded-xl hover:bg-gray-50 hover:-translate-y-1 transition-all border-2 border-gray-100 shadow-sm"
             >
               <span className="text-xl drop-shadow-sm">🔔</span>
@@ -128,6 +142,13 @@ export default function Header({ user }: { user?: any }) {
                           <p className={`text-sm line-clamp-2 leading-relaxed ${!n.is_read ? 'text-gray-600 font-medium' : 'text-gray-400'}`}>
                             {n.body}
                           </p>
+                          {n.child?.student_name && (
+                            <div className="mt-2">
+                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-700">
+                                {n.child.student_name}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
