@@ -57,7 +57,7 @@ function ScheduleContent() {
 
         {/* HEADER */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '40px', mdFontSize: '60px', fontWeight: '900', color: '#00AEEF', margin: 0, textTransform: 'uppercase', letterSpacing: '-2px' }}>
+          <h1 className="text-3xl md:text-5xl" style={{ fontWeight: '900', color: '#00AEEF', margin: 0, textTransform: 'uppercase', letterSpacing: '-2px' }}>
             Thời khóa biểu
           </h1>
           {(displayInfo?.role === 'student' || displayInfo?.viewingAsChild) && (

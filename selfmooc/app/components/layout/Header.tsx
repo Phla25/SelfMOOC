@@ -5,8 +5,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // 🎯 1. Import useRouter để chuyển trang
 import { getMyNotificationsAction, markAsReadAction } from '@/modules/notifications/notification.action'; 
 
+import { useSidebar } from './SidebarContext';
+
 export default function Header({ user }: { user?: any }) {
   const router = useRouter();
+  const { toggleSidebar } = useSidebar();
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   
@@ -52,14 +55,24 @@ export default function Header({ user }: { user?: any }) {
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b-4 border-sky-100 px-8 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
+    <header className="bg-white/80 backdrop-blur-md border-b-4 border-sky-100 px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       
-      {/* CỘT TRÁI: Lời chào */}
+      {/* CỘT TRÁI: Hamburger Button (Mobile) + Lời chào */}
       <div className="flex items-center gap-3 animate-fade-in">
-        <span className="text-3xl origin-bottom-right animate-wave">👋</span>
+        <button
+          type="button"
+          data-testid="sidebar-toggle-btn"
+          onClick={toggleSidebar}
+          className="lg:hidden p-2 rounded-xl bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors font-black text-xl"
+          aria-label="Mở menu điều hướng"
+        >
+          ☰
+        </button>
+
+        <span className="text-2xl sm:text-3xl origin-bottom-right animate-wave">👋</span>
         <div>
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">{getGreeting()}</p>
-          <h2 className="text-xl font-extrabold text-gray-800">
+          <p className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider">{getGreeting()}</p>
+          <h2 className="text-base sm:text-xl font-extrabold text-gray-800 truncate max-w-[160px] sm:max-w-none">
             {user?.name ? `${user.name} ơi!` : 'Nhà thám hiểm ơi!'}
           </h2>
         </div>

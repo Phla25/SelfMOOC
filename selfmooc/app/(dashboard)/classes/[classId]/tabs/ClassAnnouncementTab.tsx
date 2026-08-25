@@ -71,9 +71,12 @@ export default function ClassAnnouncementTab({ classId }: { classId: number }) {
     setEditingId(ann._id); 
     
     if (formRef.current) {
-      formRef.current.title.value = ann.title;
-      formRef.current.body.value = ann.body;
-      formRef.current.is_pinned.checked = ann.is_pinned;
+      const titleInput = formRef.current.elements.namedItem('title') as HTMLInputElement | null;
+      const bodyInput = formRef.current.elements.namedItem('body') as HTMLTextAreaElement | null;
+      const isPinnedInput = formRef.current.elements.namedItem('is_pinned') as HTMLInputElement | null;
+      if (titleInput) titleInput.value = ann.title || '';
+      if (bodyInput) bodyInput.value = ann.body || '';
+      if (isPinnedInput) isPinnedInput.checked = !!ann.is_pinned;
     }
     
     window.scrollTo({ top: 0, behavior: 'smooth' }); 
