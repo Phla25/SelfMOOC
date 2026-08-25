@@ -8,7 +8,7 @@ export default function MessagesDefaultPage() {
         </div>
       </div>
       
-      <h2 className="text-3xl font-black text-gray-800 italic">"Kết nối Nhà trường & Gia đình"</h2>
+      <h2 className="text-3xl font-black text-gray-800 italic">&ldquo;Kết nối Nhà trường &amp; Gia đình&rdquo;</h2>
       <p className="text-gray-500 mt-4 font-bold max-w-sm leading-relaxed">
         Chọn một người liên lạc ở danh sách bên trái để bắt đầu trao đổi về hành trình thám hiểm của các bạn nhỏ nhé! 🚀
       </p>

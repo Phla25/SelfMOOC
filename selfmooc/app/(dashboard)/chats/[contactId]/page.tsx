@@ -44,7 +44,8 @@ export default function DetailChatPage({ params }: { params: Promise<ChatParams>
 
   useEffect(() => {
     if (!currentConvId) return;
-    socket = io('http://localhost:3001');
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+    socket = io(socketUrl);
     socket.emit('join_conversation', currentConvId);
 
     socket.on('receive_message', (data: any) => {

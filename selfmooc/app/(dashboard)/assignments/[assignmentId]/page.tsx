@@ -1,9 +1,10 @@
 'use client';
 
-import { use, useEffect, useState, useRef } from 'react';
+import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAssignmentForStudentAction } from '@/modules/assignments/controller/assignment.action';
 import { submitAssignmentAction } from '@/modules/assignments/controller/submission.action';
+import { useAntiCheat } from '@/modules/assignments/hooks/useAntiCheat';
 
 export default function TakeAssignmentPage({ params }: { params: Promise<{ assignmentId: string }> }) {
   const resolvedParams = use(params);
@@ -21,11 +22,55 @@ export default function TakeAssignmentPage({ params }: { params: Promise<{ assig
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   const [resultData, setResultData] = useState<{correctCount: number, totalQuestions: number, needsManualGrading: boolean, isCheated?: boolean} | null>(null);
-  const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [showCheatWarning, setShowCheatWarning] = useState(false);
+  const [currentCheatReason, setCurrentCheatReason] = useState('');
   
   const answersRef = useRef(answers);
   useEffect(() => { answersRef.current = answers; }, [answers]);
+
+  const handleCheatSubmit = useCallback(async (reason?: string) => {
+    setShowCheatWarning(false);
+    setShowConfirmModal(false);
+    setIsSubmitting(true);
+    
+    const timeSpentSec = assignment?.time_limit_min ? (assignment.time_limit_min * 60) - (timeLeft || 0) : 0;
+    const res = await submitAssignmentAction(assignmentId, {}, timeSpentSec);
+    
+    if (res.success) { 
+      setResultData({
+        correctCount: 0,
+        totalQuestions: questions.length,
+        needsManualGrading: false,
+        isCheated: true 
+      });
+    } else {
+      alert('Lỗi hệ thống khi xử lý vi phạm: ' + (reason || ''));
+    }
+    setIsSubmitting(false);
+  }, [assignment, timeLeft, assignmentId, questions.length]);
+
+  // ========================================================
+  // 🚀 HỆ THỐNG ANTI-CHEAT VỚI HOOK useAntiCheat
+  // ========================================================
+  const isExamMode = !!assignment && assignment.assignment_type !== 'homework' && !resultData && !isSubmitting && !isLoading;
+
+  const {
+    violationCount,
+    lastReason,
+    isFullscreen,
+    requestFullscreen,
+  } = useAntiCheat({
+    enabled: isExamMode,
+    maxViolations: 3,
+    onViolation: (_count, reason) => {
+      setCurrentCheatReason(reason);
+      setShowCheatWarning(true);
+    },
+    onDisqualify: (reason) => {
+      handleCheatSubmit(reason);
+    },
+  });
+  // ========================================================
 
   useEffect(() => {
     async function loadData() {
@@ -50,54 +95,6 @@ export default function TakeAssignmentPage({ params }: { params: Promise<{ assig
     const timerId = setInterval(() => setTimeLeft(t => (t !== null ? t - 1 : null)), 1000);
     return () => clearInterval(timerId);
   }, [timeLeft]);
-
-  // ========================================================
-  // 🚀 HỆ THỐNG ANTI-CHEAT
-  // ========================================================
-  useEffect(() => {
-    if (!assignment || assignment.assignment_type === 'homework' || resultData || isSubmitting) return;
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setTabSwitchCount((prev) => {
-          const newCount = prev + 1;
-          if (newCount < 3) setShowCheatWarning(true); 
-          return newCount;
-        });
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [assignment, resultData, isSubmitting]);
-
-  useEffect(() => {
-    if (tabSwitchCount >= 3 && !resultData && !isSubmitting) {
-      handleCheatSubmit();
-    }
-  }, [tabSwitchCount]);
-
-  const handleCheatSubmit = async () => {
-    setShowCheatWarning(false);
-    setShowConfirmModal(false);
-    setIsSubmitting(true);
-    
-    const timeSpentSec = assignment?.time_limit_min ? (assignment.time_limit_min * 60) - (timeLeft || 0) : 0;
-    const res = await submitAssignmentAction(assignmentId, {}, timeSpentSec);
-    
-    if (res.success) { 
-      setResultData({
-        correctCount: 0,
-        totalQuestions: questions.length,
-        needsManualGrading: false,
-        isCheated: true 
-      });
-    } else {
-      alert('Lỗi hệ thống khi xử lý vi phạm.');
-    }
-    setIsSubmitting(false);
-  };
-  // ========================================================
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -176,153 +173,181 @@ export default function TakeAssignmentPage({ params }: { params: Promise<{ assig
   // MÀN HÌNH LÀM BÀI
   // ========================================================
   return (
-    <div className="min-h-screen bg-gray-50 w-full pt-8">
-    <div className="max-w-[1600px] mx-auto pb-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 lg:px-8 relative">
+    <div className={`min-h-screen bg-gray-50 w-full pt-8 select-none ${isExamMode ? 'relative' : ''}`}>
       
-      {/* CỘT TRÁI: ĐIỀU HƯỚNG VÀ THỜI GIAN */}
-      <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
-        {assignment?.assignment_type !== 'homework' && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3">
-            <span className="text-rose-500 text-xl">⚠️</span>
-            <div>
-              <p className="text-rose-600 font-bold text-xs uppercase tracking-widest mb-1">CHẾ ĐỘ THI NGHIÊM NGẶT</p>
-              <p className="text-gray-500 text-xs font-medium">Hệ thống đang giám sát. Chuyển tab bài thi 3 lần sẽ bị 0 điểm.</p>
-            </div>
-          </div>
-        )}
-
-        {timeLeft !== null && (
-          <div className="bg-white rounded-3xl p-6 border-2 border-gray-100 shadow-sm">
-            <div className={`text-center p-4 rounded-2xl border-2 transition-colors ${timeLeft < 300 ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse' : 'bg-sky-50 border-sky-200 text-sky-600'}`}>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-70">Thời gian còn lại</p>
-              <p className="text-4xl font-black font-mono">{formatTime(timeLeft)}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="bg-white rounded-3xl p-6 border-2 border-gray-100 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4 pb-4 border-b border-gray-100 text-center">Tiến độ làm bài</p>
-          <div className="grid grid-cols-4 xl:grid-cols-5 gap-2 mb-8">
-            {questions.map((q, idx) => (
-              <button 
-                key={q.question_id}
-                onClick={() => document.getElementById(`question-${q.question_id}`)?.scrollIntoView({ behavior: 'smooth' })}
-                className={`aspect-square rounded-xl font-black text-sm flex items-center justify-center border-2 transition-all ${
-                  answers[q.question_id] !== undefined && answers[q.question_id] !== ''
-                    ? 'bg-sky-500 border-sky-400 text-white shadow-[0_4px_10px_rgba(14,165,233,0.3)]' 
-                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
-                }`}
-              >
-                {idx + 1}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setShowConfirmModal(true)} disabled={isSubmitting} className="w-full py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-400 shadow-[0_4px_0_rgb(5,150,105)] active:translate-y-[4px] active:shadow-none disabled:opacity-50">
-            {isSubmitting ? 'ĐANG XỬ LÝ...' : '🚀 NỘP BÀI THI'}
-          </button>
-        </div>
-      </div>
-
-      {/* CỘT PHẢI: DANH SÁCH CÂU HỎI */}
-      <div className="lg:col-span-9 space-y-6">
-        <div className="bg-white rounded-[2rem] p-8 border-2 border-sky-100 shadow-sm">
-          <h1 className="text-2xl font-black text-gray-800 mb-2">{assignment?.title}</h1>
-          <p className="text-gray-500 text-sm font-medium leading-relaxed">{assignment?.description}</p>
-        </div>
-
-        <div className="space-y-6">
-          {questions.map((q, index) => (
-            <div key={q.question_id} id={`question-${q.question_id}`} className="bg-white rounded-[2rem] p-8 border-2 border-gray-100 shadow-sm scroll-mt-24">
-              
-              {/* Tiêu đề câu hỏi */}
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                <h3 className="text-lg font-bold text-sky-600">Câu {index + 1} <span className="text-xs text-gray-400 font-bold ml-2">({q.points} điểm)</span></h3>
-                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-md border border-gray-200 uppercase">{q.question_type.replace('_', ' ')}</span>
-              </div>
-              
-              {/* Nội dung câu hỏi */}
-              <div className="text-gray-800 font-bold text-lg mb-8 leading-relaxed">{q.content?.text}</div>
-              
-              {/* Hình ảnh minh họa nếu có */}
-              {q.content?.media && q.content.media.length > 0 && (
-                 <img src={q.content.media[0].url} alt="Minh họa" className="max-h-80 rounded-2xl border-2 border-gray-100 mb-8 shadow-sm" />
-              )}
-              
-              {/* Trắc nghiệm 4 đáp án */}
-              {q.question_type === 'multiple_choice' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {q.content?.options?.map((opt: any, optIdx: number) => {
-                    const isSelected = answers[q.question_id] === optIdx;
-                    return (
-                      <button key={optIdx} onClick={() => handleAnswerSelect(q.question_id, optIdx)} className={`flex items-center text-left gap-4 p-4 rounded-2xl border-2 transition-all outline-none ${isSelected ? 'bg-sky-50 border-sky-500 shadow-sm' : 'bg-gray-50 border-gray-200 hover:border-sky-300'}`}>
-                        <div className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-sky-500 bg-sky-500' : 'border-gray-300 bg-white'}`}>
-                          {isSelected && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                        </div>
-                        <span className={`font-bold ${isSelected ? 'text-sky-700' : 'text-gray-600'}`}>{opt.label}. {opt.text}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Trắc nghiệm Đúng/Sai */}
-              {q.question_type === 'true_false' && (
-                <div className="flex gap-4">
-                  <button onClick={() => handleAnswerSelect(q.question_id, true)} className={`flex-1 py-4 font-bold rounded-2xl border-2 transition-all ${answers[q.question_id] === true ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-emerald-300'}`}>ĐÚNG</button>
-                  <button onClick={() => handleAnswerSelect(q.question_id, false)} className={`flex-1 py-4 font-bold rounded-2xl border-2 transition-all ${answers[q.question_id] === false ? 'bg-rose-50 border-rose-500 text-rose-600 shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-rose-300'}`}>SAI</button>
-                </div>
-              )}
-
-              {/* Tự luận */}
-              {q.question_type === 'essay' && (
-                <textarea rows={6} className="w-full bg-gray-50 border-2 border-gray-200 rounded-2xl p-4 focus:border-sky-500 focus:bg-white transition-colors outline-none text-gray-800 font-medium placeholder:text-gray-400" value={answers[q.question_id] || ''} onChange={(e) => handleAnswerSelect(q.question_id, e.target.value)} placeholder="Nhập bài làm của bạn vào đây..."></textarea>
-              )}
+      {/* Watermark bảo vệ trong chế độ thi */}
+      {isExamMode && (
+        <div className="fixed inset-0 pointer-events-none z-10 flex flex-wrap items-center justify-around opacity-[0.03] select-none">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="text-xl font-black text-gray-800 rotate-[-25deg] m-12">
+              SelfMOOC Anti-Cheat System • Protected Exam
             </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* ======================================================== */}
-      {/* MODAL CẢNH BÁO GIAN LẬN */}
-      {/* ======================================================== */}
-      {showCheatWarning && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
-          <div className="relative bg-white rounded-[2rem] border-4 border-rose-100 p-8 max-w-md w-full shadow-2xl text-center transform animate-bounce">
-            <div className="text-6xl mb-4">👀</div>
-            <h3 className="text-2xl font-black text-rose-600 mb-2">CẢNH BÁO GIAN LẬN!</h3>
-            <p className="text-gray-600 font-medium mb-2">Bạn vừa chuyển khỏi màn hình làm bài.</p>
-            <p className="text-rose-600 font-bold mb-8 bg-rose-50 py-2 rounded-xl border border-rose-200">
-              Vi phạm lần {tabSwitchCount}. Lần 3 sẽ bị hủy bài!
-            </p>
-            <button 
-              onClick={() => setShowCheatWarning(false)}
-              className="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl transition-colors shadow-[0_4px_0_rgb(225,29,72)] active:translate-y-[2px] active:shadow-none"
-            >
-              TÔI ĐÃ HIỂU VÀ SẼ KHÔNG TÁI PHẠM
+      <div className="max-w-[1600px] mx-auto pb-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 lg:px-8 relative z-20">
+        
+        {/* CỘT TRÁI: ĐIỀU HƯỚNG VÀ THỜI GIAN */}
+        <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
+          {assignment?.assignment_type !== 'homework' && (
+            <div className="bg-rose-50 border border-rose-200 rounded-3xl p-5 shadow-sm space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-rose-500 text-2xl">🛡️</span>
+                <div>
+                  <p className="text-rose-600 font-black text-xs uppercase tracking-widest">CHẾ ĐỘ THI NGHIÊM NGẶT</p>
+                  <p className="text-gray-600 text-xs font-medium mt-0.5 leading-relaxed">
+                    Khóa F12, chuột phải, copy/paste. Vi phạm 3 lần sẽ tự động hủy bài thi 0 điểm.
+                  </p>
+                </div>
+              </div>
+
+              {!isFullscreen && (
+                <button
+                  type="button"
+                  onClick={requestFullscreen}
+                  className="w-full py-2.5 px-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  <span>⛶</span> Bật Toàn Màn Hình
+                </button>
+              )}
+            </div>
+          )}
+
+          {timeLeft !== null && (
+            <div className="bg-white rounded-3xl p-6 border-2 border-gray-100 shadow-sm">
+              <div className={`text-center p-4 rounded-2xl border-2 transition-colors ${timeLeft < 300 ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse' : 'bg-sky-50 border-sky-200 text-sky-600'}`}>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-70">Thời gian còn lại</p>
+                <p className="text-4xl font-black font-mono">{formatTime(timeLeft)}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-3xl p-6 border-2 border-gray-100 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4 pb-4 border-b border-gray-100 text-center">Tiến độ làm bài</p>
+            <div className="grid grid-cols-4 xl:grid-cols-5 gap-2 mb-8">
+              {questions.map((q, idx) => (
+                <button 
+                  key={q.question_id}
+                  onClick={() => document.getElementById(`question-${q.question_id}`)?.scrollIntoView({ behavior: 'smooth' })}
+                  className={`aspect-square rounded-xl font-black text-sm flex items-center justify-center border-2 transition-all ${
+                    answers[q.question_id] !== undefined && answers[q.question_id] !== ''
+                      ? 'bg-sky-500 border-sky-400 text-white shadow-[0_4px_10px_rgba(14,165,233,0.3)]' 
+                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowConfirmModal(true)} disabled={isSubmitting} className="w-full py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-400 shadow-[0_4px_0_rgb(5,150,105)] active:translate-y-[4px] active:shadow-none disabled:opacity-50">
+              {isSubmitting ? 'ĐANG XỬ LÝ...' : '🚀 NỘP BÀI THI'}
             </button>
           </div>
         </div>
-      )}
 
-      {/* ======================================================== */}
-      {/* MODAL XÁC NHẬN NỘP BÀI */}
-      {/* ======================================================== */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)}></div>
-          <div className="relative bg-white rounded-[2rem] border-2 border-gray-100 p-8 max-w-sm w-full shadow-2xl text-center transform animate-fade-in-up">
-            <div className="text-5xl mb-4">🚀</div>
-            <h3 className="text-2xl font-black text-gray-800 mb-2">Chốt nộp bài?</h3>
-            <p className="text-gray-500 font-medium text-sm mb-8">Hệ thống sẽ ghi nhận kết quả ngay lập tức và bạn không thể sửa lại đáp án.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">Làm tiếp</button>
-              <button onClick={handleFinalSubmit} className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors shadow-[0_4px_0_rgb(5,150,105)] active:translate-y-[2px] active:shadow-none">Nộp bài ngay</button>
-            </div>
+        {/* CỘT PHẢI: DANH SÁCH CÂU HỎI */}
+        <div className="lg:col-span-9 space-y-6">
+          <div className="bg-white rounded-[2rem] p-8 border-2 border-sky-100 shadow-sm">
+            <h1 className="text-2xl font-black text-gray-800 mb-2">{assignment?.title}</h1>
+            <p className="text-gray-500 text-sm font-medium leading-relaxed">{assignment?.description}</p>
+          </div>
+
+          <div className="space-y-6">
+            {questions.map((q, index) => (
+              <div key={q.question_id} id={`question-${q.question_id}`} className="bg-white rounded-[2rem] p-8 border-2 border-gray-100 shadow-sm scroll-mt-24">
+                
+                {/* Tiêu đề câu hỏi */}
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                  <h3 className="text-lg font-bold text-sky-600">Câu {index + 1} <span className="text-xs text-gray-400 font-bold ml-2">({q.points} điểm)</span></h3>
+                  <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-md border border-gray-200 uppercase">{q.question_type.replace('_', ' ')}</span>
+                </div>
+                
+                {/* Nội dung câu hỏi */}
+                <div className="text-gray-800 font-bold text-lg mb-8 leading-relaxed select-none">{q.content?.text}</div>
+                
+                {/* Hình ảnh minh họa nếu có */}
+                {q.content?.media && q.content.media.length > 0 && (
+                   <img src={q.content.media[0].url} alt="Minh họa" className="max-h-80 rounded-2xl border-2 border-gray-100 mb-8 shadow-sm pointer-events-none select-none" />
+                )}
+                
+                {/* Trắc nghiệm 4 đáp án */}
+                {q.question_type === 'multiple_choice' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {q.content?.options?.map((opt: any, optIdx: number) => {
+                      const isSelected = answers[q.question_id] === optIdx;
+                      return (
+                        <button key={optIdx} onClick={() => handleAnswerSelect(q.question_id, optIdx)} className={`flex items-center text-left gap-4 p-4 rounded-2xl border-2 transition-all outline-none ${isSelected ? 'bg-sky-50 border-sky-500 shadow-sm' : 'bg-gray-50 border-gray-200 hover:border-sky-300'}`}>
+                          <div className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-sky-500 bg-sky-500' : 'border-gray-300 bg-white'}`}>
+                            {isSelected && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                          </div>
+                          <span className={`font-bold ${isSelected ? 'text-sky-700' : 'text-gray-600'}`}>{opt.label}. {opt.text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Trắc nghiệm Đúng/Sai */}
+                {q.question_type === 'true_false' && (
+                  <div className="flex gap-4">
+                    <button onClick={() => handleAnswerSelect(q.question_id, true)} className={`flex-1 py-4 font-bold rounded-2xl border-2 transition-all ${answers[q.question_id] === true ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-emerald-300'}`}>ĐÚNG</button>
+                    <button onClick={() => handleAnswerSelect(q.question_id, false)} className={`flex-1 py-4 font-bold rounded-2xl border-2 transition-all ${answers[q.question_id] === false ? 'bg-rose-50 border-rose-500 text-rose-600 shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-rose-300'}`}>SAI</button>
+                  </div>
+                )}
+
+                {/* Tự luận */}
+                {q.question_type === 'essay' && (
+                  <textarea rows={6} className="w-full bg-gray-50 border-2 border-gray-200 rounded-2xl p-4 focus:border-sky-500 focus:bg-white transition-colors outline-none text-gray-800 font-medium placeholder:text-gray-400" value={answers[q.question_id] || ''} onChange={(e) => handleAnswerSelect(q.question_id, e.target.value)} placeholder="Nhập bài làm của bạn vào đây..."></textarea>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-      )}
-    </div>
+
+        {/* ======================================================== */}
+        {/* MODAL CẢNH BÁO GIAN LẬN */}
+        {/* ======================================================== */}
+        {showCheatWarning && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+            <div className="relative bg-white rounded-[2rem] border-4 border-rose-200 p-8 max-w-md w-full shadow-2xl text-center transform animate-bounce">
+              <div className="text-6xl mb-4">🚨</div>
+              <h3 className="text-2xl font-black text-rose-600 mb-2">CẢNH BÁO VI PHẠM!</h3>
+              <p className="text-gray-600 font-medium text-sm mb-3">
+                {currentCheatReason || lastReason || 'Hệ thống phát hiện hành vi nghi vấn gian lận thi cử.'}
+              </p>
+              <div className="text-rose-600 font-black mb-6 bg-rose-50 py-3 px-4 rounded-2xl border border-rose-200 text-sm">
+                Vi phạm lần {violationCount}/3. Lần thứ 3 bài thi sẽ tự động bị hủy và gán 0 điểm!
+              </div>
+              <button 
+                onClick={() => setShowCheatWarning(false)}
+                className="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl transition-colors shadow-[0_4px_0_rgb(225,29,72)] active:translate-y-[2px] active:shadow-none"
+              >
+                TÔI ĐÃ HIỂU VÀ SẼ KHÔNG TÁI PHẠM
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* MODAL XÁC NHẬN NỘP BÀI */}
+        {/* ======================================================== */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)}></div>
+            <div className="relative bg-white rounded-[2rem] border-2 border-gray-100 p-8 max-w-sm w-full shadow-2xl text-center transform animate-fade-in-up">
+              <div className="text-5xl mb-4">🚀</div>
+              <h3 className="text-2xl font-black text-gray-800 mb-2">Chốt nộp bài?</h3>
+              <p className="text-gray-500 font-medium text-sm mb-8">Hệ thống sẽ ghi nhận kết quả ngay lập tức và bạn không thể sửa lại đáp án.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">Làm tiếp</button>
+                <button onClick={handleFinalSubmit} className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors shadow-[0_4px_0_rgb(5,150,105)] active:translate-y-[2px] active:shadow-none">Nộp bài ngay</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

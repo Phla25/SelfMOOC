@@ -1,9 +1,12 @@
 // socket-server.js
 const { Server } = require("socket.io");
 
-const io = new Server(3001, {
+const port = process.env.PORT || 3001;
+const corsOrigin = process.env.CORS_ORIGIN || "*";
+
+const io = new Server(port, {
   cors: {
-    origin: "http://localhost:3000", // URL của app Next.js của bạn
+    origin: corsOrigin,
     methods: ["GET", "POST"]
   }
 });
